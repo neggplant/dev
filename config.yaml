@@ -1,12 +1,14 @@
 mongodb:
-  uri: mongodb://root:root@localtest:27017/
-  database: mydb
+  uri: "mongodb://root:root@localtest:27017"
+  user_db: "user_service"  # 用户数据存储的 MongoDB 数据库
+  order_db: "order_service" # 订单数据存储的 MongoDB 数据库
 
 redis:
-  host: localtest
-  port: 6379
+  host: "localtest"
+  port: "6379"
   password: "aa"
-  db: 0
+  user_db: 0    # 用户数据缓存的 Redis 库
+  order_db: 1   # 订单数据缓存的 Redis 库
 
 server:
   port: 8080

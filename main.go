@@ -14,13 +14,13 @@ func main() {
 
 	// 初始化日志
 	utils.InitLogger()
+	// utils.InitLoggerFile()
+
 	defer utils.Logger.Sync() // 确保日志缓冲区刷新
 
-	// 初始化Redis
-	utils.InitRedis()
-
 	// 初始化数据库
-	utils.InitDB()
+	utils.InitMongoDB()
+	// defer utils.mongoClient.Disconnect(context.Background())
 
 	// 设置路由
 	r := routers.SetupRouter()

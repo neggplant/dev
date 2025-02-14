@@ -2,8 +2,10 @@ package services
 
 import (
 	"context"
+	"myappg/config"
 	"myappg/models"
 	"myappg/utils"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -15,7 +17,7 @@ type UserService struct {
 }
 
 func NewUserService() *UserService {
-	db := utils.GetDB()
+	db := utils.GetMongoDB(config.AppConfig.MongoDB.UserDB)
 	return &UserService{
 		collection: db.Collection("users"),
 	}
@@ -43,19 +45,28 @@ func (s *UserService) CreateUser(user *models.User) error {
 }
 
 func (s *UserService) GetUserByID(id string) (*models.User, error) {
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		utils.Logger.Error(err.Error())
-		return nil, err
-	}
-	// utils.Logger.Error("error1")
 	var user models.User
-	err = s.collection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&user)
-	if err != nil {
-		return nil, err
-	}
+	cacheKey := "user:" + id
 
-	return &user, nil
+	// 使用通用查询方法
+	err := utils.CacheFirstQuery(
+		context.Background(),
+		config.AppConfig.Redis.UserDB, // Redis 用户库
+		cacheKey,
+		config.AppConfig.MongoDB.UserDB, // MongoDB 用户库
+		"users",
+		&user,
+		func(collection *mongo.Collection) error {
+			objectID, err := primitive.ObjectIDFromHex(id)
+			if err != nil {
+				return err
+			}
+			return collection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&user)
+		},
+		1*time.Hour, // 缓存过期时间
+	)
+
+	return &user, err
 }
 
 func (s *UserService) UpdateUser(id string, user *models.User) error {
