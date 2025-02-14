@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"myappg/config"
 	"myappg/models"
 	"myappg/utils"
@@ -10,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 )
 
 type UserService struct {
@@ -69,21 +71,43 @@ func (s *UserService) GetUserByID(id string) (*models.User, error) {
 	return &user, err
 }
 
-func (s *UserService) UpdateUser(id string, user *models.User) error {
+var (
+	ErrUserNotFound = errors.New("user not found")
+)
+
+func (s *UserService) UpdateUser(id string, updateData *models.User) (*models.User, error) {
+	// 转换ID
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return nil, err // 由控制器处理
 	}
 
-	update := bson.M{
-		"$set": bson.M{
-			"name":  user.Name,
-			"email": user.Email,
-		},
+	// 执行更新
+	result, err := s.collection.UpdateByID(
+		context.Background(),
+		objectID,
+		bson.M{"$set": updateData},
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	_, err = s.collection.UpdateOne(context.Background(), bson.M{"_id": objectID}, update)
-	return err
+	// 检查是否实际更新了文档
+	if result.MatchedCount == 0 {
+		return nil, ErrUserNotFound
+	}
+
+	// 使缓存失效
+	cacheKey := "user:" + id
+	if err := utils.GetRedisClient(config.AppConfig.Redis.UserDB).
+		Del(context.Background(), cacheKey).Err(); err != nil {
+		utils.Logger.Warn("Cache invalidation failed",
+			zap.String("key", cacheKey),
+			zap.Error(err))
+	}
+
+	// 返回更新后的完整数据
+	return s.GetUserByID(id)
 }
 
 func (s *UserService) DeleteUser(id string) error {
@@ -93,5 +117,13 @@ func (s *UserService) DeleteUser(id string) error {
 	}
 
 	_, err = s.collection.DeleteOne(context.Background(), bson.M{"_id": objectID})
+
+	cacheKey := "user:" + id
+	if err := utils.GetRedisClient(config.AppConfig.Redis.UserDB).
+		Del(context.Background(), cacheKey).Err(); err != nil {
+		utils.Logger.Warn("Cache invalidation failed",
+			zap.String("key", cacheKey),
+			zap.Error(err))
+	}
 	return err
 }

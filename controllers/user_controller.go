@@ -1,11 +1,17 @@
 package controllers
 
 import (
+	"errors"
 	"myappg/models"
 	"myappg/services"
+	"myappg/utils"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/zap"
 )
 
 type UserController struct {
@@ -53,19 +59,71 @@ func (ctrl *UserController) GetUserByID(c *gin.Context) {
 }
 
 func (ctrl *UserController) UpdateUser(c *gin.Context) {
+	// 1. 获取用户ID并验证格式
 	id := c.Param("id")
-	var user models.User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if _, err := primitive.ObjectIDFromHex(id); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid user ID format",
+			"code":  "INVALID_ID",
+		})
 		return
 	}
 
-	if err := ctrl.userService.UpdateUser(id, &user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// 2. 绑定请求数据并验证
+	var updateData models.User
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		// 更详细的字段级错误信息
+		fieldErrors := make(map[string]string)
+		for _, fieldErr := range err.(validator.ValidationErrors) {
+			field := fieldErr.Field()
+			switch fieldErr.Tag() {
+			case "required":
+				fieldErrors[field] = "This field is required"
+			case "email":
+				fieldErrors[field] = "Invalid email format"
+			default:
+				fieldErrors[field] = "Validation failed"
+			}
+		}
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "Validation failed",
+			"fields": fieldErrors,
+			"code":   "VALIDATION_ERROR",
+		})
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	// 3. 执行更新操作
+	updatedUser, err := ctrl.userService.UpdateUser(id, &updateData)
+	if err != nil {
+		// 根据错误类型返回不同状态码
+		switch {
+		case errors.Is(err, services.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "User not found",
+				"code":  "USER_NOT_FOUND",
+			})
+		default:
+			utils.Logger.Error("User update failed",
+				zap.String("user_id", id),
+				zap.Error(err))
+
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to update user",
+				"code":  "INTERNAL_ERROR",
+			})
+		}
+		return
+	}
+
+	// 4. 返回更新后的完整数据
+	c.JSON(http.StatusOK, gin.H{
+		"data": updatedUser,
+		"meta": gin.H{
+			"updated_at": time.Now().UTC().Format(time.RFC3339),
+		},
+	})
 }
 
 func (ctrl *UserController) DeleteUser(c *gin.Context) {
