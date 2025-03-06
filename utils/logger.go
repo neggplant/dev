@@ -1,6 +1,10 @@
 package utils
 
 import (
+	"fmt"
+	"os"
+	"time"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -18,19 +22,29 @@ func InitLoggerFile() {
 		Compress:   true,           // 是否压缩旧日志文件
 	})
 
+	// Custom time encoder
+	customTimeEncoder := func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+		enc.AppendString(t.Format("2006-01-02 15:04:05,000") + " - " + fmt.Sprintf("%d", os.Getpid()))
+	}
+
 	// 配置日志编码器
 	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder // 时间格式
+	encoderConfig.EncodeTime = customTimeEncoder
+	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	encoderConfig.EncodeCaller = func(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
+		enc.AppendString(caller.File + " - " + fmt.Sprintf("%d", caller.Line))
+	}
+	encoderConfig.ConsoleSeparator = " - "
 
 	// 创建核心
 	core := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderConfig), // JSON 格式
-		writer,                                // 输出到文件
-		zap.InfoLevel,                         // 日志级别
+		zapcore.NewConsoleEncoder(encoderConfig), // 使用ConsoleEncoder
+		writer,                                   // 输出到文件
+		zap.InfoLevel,                            // 日志级别
 	)
 
-	// 创建 Logger
-	Logger = zap.New(core, zap.AddCaller())
+	// Add caller information
+	Logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.ErrorLevel))
 	defer Logger.Sync()
 
 	// 替换全局的日志器和 SugaredLogger

@@ -1,0 +1,14 @@
+mongodb:
+  uri: "mongodb://root:root@localtest:27017"
+  user_db: "user_service"
+  order_db: "order_service"
+
+redis:
+  host: "localtest"
+  port: "6379"
+  password: "aa"
+  user_db: 0
+  order_db: 1
+
+server:
+  port: 8080

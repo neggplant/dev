@@ -3,3 +3,15 @@
 {"level":"info","ts":"2025-02-13T17:29:34.209+0800","caller":"utils/mongo.go:31","msg":"Connected to MongoDB!"}
 {"level":"info","ts":"2025-02-13T17:29:34.220+0800","caller":"myappg/main.go:29","msg":"Starting server on port 8080"}
 {"level":"fatal","ts":"2025-02-13T17:29:34.220+0800","caller":"myappg/main.go:31","msg":"Failed to start server","error":"listen tcp :8080: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted."}
+2025-03-06 14:57:46,976	INFO	myappg/main.go:29	Starting server on port 8080	{"pid": 31560}
+2025-03-06 14:57:52,001	INFO	services/user_service.go:31	GetAllUsers called with	{"pid": 31560}
+2025-03-06 15:03:16,780 - 7052	INFO	myappg/main.go:29	Starting server on port 8080	{"pid": 7052}
+2025-03-06 15:03:22,374 - 7052	INFO	services/user_service.go:31	GetAllUsers called with	{"pid": 7052}
+2025-03-06 15:11:41,146 - 31696	INFO	myappg/main.go:29	Starting server on port 8080
+2025-03-06 15:11:45,067 - 31696	INFO	services/user_service.go:31	GetAllUsers called with
+2025-03-06 15:13:49,583 - 8564 - INFO - myappg/main.go:29 - Starting server on port 8080
+2025-03-06 15:13:55,333 - 8564 - INFO - services/user_service.go:31 - GetAllUsers called with
+2025-03-06 15:15:33,791 - 25480 - INFO - d:/code/github/myappg/main.go-29 - Starting server on port 8080
+2025-03-06 15:15:38,206 - 25480 - INFO - d:/code/github/myappg/services/user_service.go-31 - GetAllUsers called with
+2025-03-06 15:16:00,579 - 23800 - INFO - d:/code/github/myappg/main.go - 29 - Starting server on port 8080
+2025-03-06 15:16:20,877 - 23800 - INFO - d:/code/github/myappg/services/user_service.go - 31 - GetAllUsers called with

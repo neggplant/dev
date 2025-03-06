@@ -28,12 +28,23 @@ type Config struct {
 var AppConfig Config
 
 func InitConfig() {
-	configFile, err := os.ReadFile("config.yaml")
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		env = "dev"
+	}
+	configFile := ""
+	if env == "prod" {
+		configFile = "config_prod.yaml"
+	} else {
+		configFile = "config_dev.yaml"
+	}
+
+	file, err := os.ReadFile(configFile)
 	if err != nil {
 		log.Fatalf("Error reading config file: %v", err)
 	}
 
-	err = yaml.Unmarshal(configFile, &AppConfig)
+	err = yaml.Unmarshal(file, &AppConfig)
 	if err != nil {
 		log.Fatalf("Error unmarshalling config: %v", err)
 	}

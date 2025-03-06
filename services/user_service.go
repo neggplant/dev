@@ -28,6 +28,7 @@ func NewUserService() *UserService {
 func (s *UserService) GetAllUsers() ([]models.User, error) {
 	var users []models.User
 
+	utils.Logger.Info("GetAllUsers called with")
 	cursor, err := s.collection.Find(context.Background(), bson.M{})
 	if err != nil {
 		return nil, err
@@ -49,6 +50,7 @@ func (s *UserService) CreateUser(user *models.User) error {
 func (s *UserService) GetUserByID(id string) (*models.User, error) {
 	var user models.User
 	cacheKey := "user:" + id
+	utils.Logger.Info("GetUserByID called with id:")
 
 	// 使用通用查询方法
 	err := utils.CacheFirstQuery(
