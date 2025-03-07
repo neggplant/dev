@@ -18,12 +18,14 @@ type UserController struct {
 	userService *services.UserService
 }
 
+// NewUserController creates a new UserController instance
 func NewUserController() *UserController {
 	return &UserController{
 		userService: services.NewUserService(),
 	}
 }
 
+// GetUsers retrieves all users
 func (ctrl *UserController) GetUsers(c *gin.Context) {
 	users, err := ctrl.userService.GetAllUsers()
 	if err != nil {
@@ -59,7 +61,7 @@ func (ctrl *UserController) GetUserByID(c *gin.Context) {
 }
 
 func (ctrl *UserController) UpdateUser(c *gin.Context) {
-	// 1. 获取用户ID并验证格式
+	// 1. Get user ID and validate format
 	id := c.Param("id")
 	if _, err := primitive.ObjectIDFromHex(id); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -69,10 +71,10 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// 2. 绑定请求数据并验证
+	// 2. Bind request data and validate
 	var updateData models.User
 	if err := c.ShouldBindJSON(&updateData); err != nil {
-		// 更详细的字段级错误信息
+		// More detailed field-level error information
 		fieldErrors := make(map[string]string)
 		for _, fieldErr := range err.(validator.ValidationErrors) {
 			field := fieldErr.Field()
@@ -94,10 +96,10 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// 3. 执行更新操作
+	// 3. Execute update operation
 	updatedUser, err := ctrl.userService.UpdateUser(id, &updateData)
 	if err != nil {
-		// 根据错误类型返回不同状态码
+		// Return different status codes based on error type
 		switch {
 		case errors.Is(err, services.ErrUserNotFound):
 			c.JSON(http.StatusNotFound, gin.H{
@@ -117,7 +119,7 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// 4. 返回更新后的完整数据
+	// 4. Return the complete updated data
 	c.JSON(http.StatusOK, gin.H{
 		"data": updatedUser,
 		"meta": gin.H{

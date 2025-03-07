@@ -9,26 +9,28 @@ import (
 )
 
 func main() {
-	// 初始化配置
+	// Initialize configuration
 	config.InitConfig()
 
-	// 初始化日志
+	// Initialize logger
 	utils.InitLogger()
 	// utils.InitLoggerFile()
 	// utils.InitAsyncLoggerFile()
 
-	defer utils.Logger.Sync() // 确保日志缓冲区刷新
+	defer utils.Logger.Sync() // Ensure the log buffer is flushed
 
-	// 初始化数据库
+	// Initialize database
 	utils.InitMongoDB()
 	// defer utils.mongoClient.Disconnect(context.Background())
 
-	// 设置路由
+	// Set up routes
 	r := routers.SetupRouter()
 
-	// 启动服务
+	// Start server and listen for incoming requests
 	utils.Logger.Info("Starting server on port " + config.AppConfig.Server.Port)
 	if err := r.Run(":" + config.AppConfig.Server.Port); err != nil {
 		utils.Logger.Fatal("Failed to start server", zap.Error(err))
 	}
 }
+
+// main function is the entry point of the application

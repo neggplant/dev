@@ -14,10 +14,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// UserService struct represents the user service
 type UserService struct {
 	collection *mongo.Collection
 }
 
+// NewUserService creates a new user service
 func NewUserService() *UserService {
 	db := utils.GetMongoDB(config.AppConfig.MongoDB.UserDB)
 	return &UserService{
@@ -25,6 +27,7 @@ func NewUserService() *UserService {
 	}
 }
 
+// GetAllUsers retrieves all users from the database
 func (s *UserService) GetAllUsers() ([]models.User, error) {
 	var users []models.User
 
@@ -52,12 +55,12 @@ func (s *UserService) GetUserByID(id string) (*models.User, error) {
 	cacheKey := "user:" + id
 	utils.Logger.Info("GetUserByID called with id:")
 
-	// 使用通用查询方法
+	// Use the general query method
 	err := utils.CacheFirstQuery(
 		context.Background(),
-		config.AppConfig.Redis.UserDB, // Redis 用户库
+		config.AppConfig.Redis.UserDB, // Redis user database
 		cacheKey,
-		config.AppConfig.MongoDB.UserDB, // MongoDB 用户库
+		config.AppConfig.MongoDB.UserDB, // MongoDB user database
 		"users",
 		&user,
 		func(collection *mongo.Collection) error {
@@ -67,7 +70,7 @@ func (s *UserService) GetUserByID(id string) (*models.User, error) {
 			}
 			return collection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&user)
 		},
-		1*time.Hour, // 缓存过期时间
+		1*time.Hour, // Cache expiration time
 	)
 
 	return &user, err
@@ -78,13 +81,13 @@ var (
 )
 
 func (s *UserService) UpdateUser(id string, updateData *models.User) (*models.User, error) {
-	// 转换ID
+	// Convert ID
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err // 由控制器处理
+		return nil, err // Handled by controller
 	}
 
-	// 执行更新
+	// Execute update
 	result, err := s.collection.UpdateByID(
 		context.Background(),
 		objectID,
@@ -94,12 +97,12 @@ func (s *UserService) UpdateUser(id string, updateData *models.User) (*models.Us
 		return nil, err
 	}
 
-	// 检查是否实际更新了文档
+	// Check if the document was actually updated
 	if result.MatchedCount == 0 {
 		return nil, ErrUserNotFound
 	}
 
-	// 使缓存失效
+	// Invalidate cache
 	cacheKey := "user:" + id
 	if err := utils.GetRedisClient(config.AppConfig.Redis.UserDB).
 		Del(context.Background(), cacheKey).Err(); err != nil {
@@ -108,7 +111,7 @@ func (s *UserService) UpdateUser(id string, updateData *models.User) (*models.Us
 			zap.Error(err))
 	}
 
-	// 返回更新后的完整数据
+	// Return the complete updated data
 	return s.GetUserByID(id)
 }
 

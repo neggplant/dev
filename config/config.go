@@ -11,15 +11,15 @@ import (
 type Config struct {
 	MongoDB struct {
 		URI     string `yaml:"uri"`
-		UserDB  string `yaml:"user_db"`  // 用户数据存储的数据库
-		OrderDB string `yaml:"order_db"` // 订单数据存储的数据库
+		UserDB  string `yaml:"user_db"`  // Database for storing user data
+		OrderDB string `yaml:"order_db"` // Database for storing order data
 	} `yaml:"mongodb"`
 	Redis struct {
 		Host     string `yaml:"host"`
 		Port     string `yaml:"port"`
 		Password string `yaml:"password"`
-		UserDB   int    `yaml:"user_db"`  // 用户数据缓存库
-		OrderDB  int    `yaml:"order_db"` // 订单数据缓存库
+		UserDB   int    `yaml:"user_db"`  // User data cache database
+		OrderDB  int    `yaml:"order_db"` // Order data cache database
 	} `yaml:"redis"`
 	Server struct {
 		Port string `yaml:"port"`
