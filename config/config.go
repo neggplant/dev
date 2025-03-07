@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"go.uber.org/zap/zapcore"
 	"gopkg.in/yaml.v2"
 )
 
@@ -23,9 +24,27 @@ type Config struct {
 	Server struct {
 		Port string `yaml:"port"`
 	} `yaml:"server"`
+	LogLevel string `yaml:"log_level"`
 }
 
 var AppConfig Config
+
+func GetLogLevel() zapcore.Level {
+	switch AppConfig.LogLevel {
+	case "debug":
+		return zapcore.DebugLevel
+	case "info":
+		return zapcore.InfoLevel
+	case "warn":
+		return zapcore.WarnLevel
+	case "error":
+		return zapcore.ErrorLevel
+	case "fatal":
+		return zapcore.FatalLevel
+	default:
+		return zapcore.InfoLevel
+	}
+}
 
 func InitConfig() {
 	env := os.Getenv("APP_ENV")

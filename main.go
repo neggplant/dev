@@ -15,6 +15,7 @@ func main() {
 	// 初始化日志
 	utils.InitLogger()
 	// utils.InitLoggerFile()
+	// utils.InitAsyncLoggerFile()
 
 	defer utils.Logger.Sync() // 确保日志缓冲区刷新
 
